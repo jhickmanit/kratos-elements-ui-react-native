@@ -4,14 +4,11 @@ import {
   ActivityIndicator,
   ScrollView,
   TouchableOpacity,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../context/AuthContext";
-import { platformOS } from "../api/platform";
+import { isWeb, platformOS } from "../api/platform";
 import { oryUrl } from "../api/ory";
-
-const isWeb = Platform.OS === "web";
 
 export default function Home() {
   const router = useRouter();
@@ -24,7 +21,7 @@ export default function Home() {
           isWeb ? "bg-ui-50" : "bg-white"
         }`}
       >
-        <ActivityIndicator size="large" color="#0f172a" />
+        <ActivityIndicator size="large" color="rgb(15, 23, 42)" />
         <Text className="mt-3 text-ui-500 text-sm">Checking session...</Text>
       </View>
     );
@@ -42,7 +39,7 @@ export default function Home() {
             : "flex-1 items-center pt-[60px] min-h-full"
         }
       >
-        <View className={isWeb ? "ory-elements w-full max-w-[480px]" : "ory-elements w-full"}>
+        <View className={isWeb ? "w-full max-w-[480px]" : "w-full"}>
           <View className="flex w-full flex-1 items-center justify-center">
             <View
               className={

@@ -2,6 +2,7 @@ import React from "react";
 import { View, ActivityIndicator, Text } from "react-native";
 import {
   UiNode,
+  UiNodeInputAttributes,
   LoginFlow,
   RegistrationFlow,
   VerificationFlow,
@@ -10,6 +11,17 @@ import {
 } from "@ory/client-fetch";
 import { NodeDispatcher } from "./NodeDispatcher";
 import { unflattenObject } from "../api/utils";
+
+/** Generate a stable key for a UI node */
+function getNodeKey(node: UiNode, index: number): string {
+  if (node.type === "input") {
+    const attrs = node.attributes as UiNodeInputAttributes;
+    // Combine group, type, and name for uniqueness (e.g., "password-submit-method")
+    return `${node.group}-${attrs.type}-${attrs.name}`;
+  }
+  // For non-input nodes, use group + type + index
+  return `${node.group}-${node.type}-${index}`;
+}
 
 type AnyFlow =
   | LoginFlow
@@ -30,12 +42,12 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
   // Initialize values from flow nodes
   React.useEffect(() => {
     if (flow?.ui?.nodes) {
-      const flowValues: Record<string, any> = {};
+      const flowValues: Record<string, unknown> = {};
       const hiddenFieldNames: Set<string> = new Set();
 
       flow.ui.nodes.forEach((node) => {
         if (node.type === "input") {
-          const attrs = node.attributes as any;
+          const attrs = node.attributes as UiNodeInputAttributes;
           if (attrs.value !== undefined) {
             flowValues[attrs.name] = attrs.value;
           }
@@ -71,11 +83,11 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
 
       // IMPORTANT: Always pull hidden field values (like csrf_token) directly from
       // the flow at submission time to ensure they're current and not stale from state
-      const hiddenValues: Record<string, any> = {};
+      const hiddenValues: Record<string, unknown> = {};
       if (flow?.ui?.nodes) {
         flow.ui.nodes.forEach((node) => {
           if (node.type === "input") {
-            const attrs = node.attributes as any;
+            const attrs = node.attributes as UiNodeInputAttributes;
             if (attrs.type === "hidden" && attrs.value !== undefined) {
               hiddenValues[attrs.name] = attrs.value;
             }
@@ -100,18 +112,18 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
     if (!flow?.ui?.nodes) return null;
     for (const node of flow.ui.nodes) {
       if (node.type === "input") {
-        const attrs = node.attributes as any;
+        const attrs = node.attributes as UiNodeInputAttributes;
         if (attrs.type === "submit" && node.group === "password") {
-          return { name: attrs.name, value: attrs.value };
+          return { name: attrs.name, value: attrs.value as string };
         }
       }
     }
     // Fallback to first submit button
     for (const node of flow.ui.nodes) {
       if (node.type === "input") {
-        const attrs = node.attributes as any;
+        const attrs = node.attributes as UiNodeInputAttributes;
         if (attrs.type === "submit") {
-          return { name: attrs.name, value: attrs.value };
+          return { name: attrs.name, value: attrs.value as string };
         }
       }
     }
@@ -127,7 +139,7 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
   if (!flow) {
     return (
       <View className="flex-1 items-center justify-center py-8">
-        <ActivityIndicator size="large" color="#0f172a" />
+        <ActivityIndicator size="large" color="rgb(15, 23, 42)" />
       </View>
     );
   }
@@ -154,11 +166,13 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
       ))}
 
       {flow.ui.nodes.map((node, index) => {
-        const attrs = node.attributes as any;
-        const name = attrs?.name;
+        const name =
+          node.type === "input"
+            ? (node.attributes as UiNodeInputAttributes).name
+            : undefined;
         return (
           <NodeDispatcher
-            key={index}
+            key={getNodeKey(node, index)}
             node={node}
             value={name ? values[name] : undefined}
             setValue={handleSetValue}

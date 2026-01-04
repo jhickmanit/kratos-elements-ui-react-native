@@ -1,13 +1,12 @@
 import React from "react";
-import { View, Text, ScrollView, Platform } from "react-native";
+import { View, Text, ScrollView } from "react-native";
+import { isWeb } from "../api/platform";
 
 interface AuthCardProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
 }
-
-const isWeb = Platform.OS === "web";
 
 export const AuthCard = ({ children, title, subtitle }: AuthCardProps) => {
   return (
@@ -22,7 +21,7 @@ export const AuthCard = ({ children, title, subtitle }: AuthCardProps) => {
             : "flex-1 items-center pt-[60px] min-h-full"
         }
       >
-        <View className={isWeb ? "ory-elements w-full max-w-[480px]" : "ory-elements w-full"}>
+        <View className={isWeb ? "w-full max-w-[480px]" : "w-full"}>
           <View className="flex w-full flex-1 items-center justify-center">
             <View
               className={

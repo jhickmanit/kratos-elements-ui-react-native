@@ -1,16 +1,19 @@
 import React from "react";
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, TextInputProps } from "react-native";
 import { UiNode, UiNodeInputAttributes } from "@ory/client-fetch";
 
 interface NodeInputProps {
   node: UiNode;
   attributes: UiNodeInputAttributes;
-  value?: any;
-  setValue: (value: any) => void;
+  value?: unknown;
+  setValue: (value: string) => void;
   disabled: boolean;
   onSubmit?: (method: string, value?: string) => void;
   onEnterSubmit?: () => void;
 }
+
+type TextContentType = TextInputProps["textContentType"];
+type AutoCompleteType = TextInputProps["autoComplete"];
 
 export const NodeInput = ({
   node,
@@ -22,11 +25,12 @@ export const NodeInput = ({
   onEnterSubmit,
 }: NodeInputProps) => {
   const type = attributes.type;
+  const name = attributes.name;
   const hasError = node.messages?.some((m) => m.type === "error");
 
   // Use controlled value from state, fallback to attribute value for initial render
   const inputValue =
-    value !== undefined ? value : (attributes.value as string) || "";
+    value !== undefined ? String(value) : String(attributes.value ?? "");
 
   if (type === "hidden") {
     return null;
@@ -42,7 +46,7 @@ export const NodeInput = ({
               : "bg-ui-900 active:bg-ui-700"
           }`}
           onPress={() =>
-            onSubmit && onSubmit(attributes.name, attributes.value as string)
+            onSubmit && onSubmit(name, attributes.value as string)
           }
           disabled={disabled}
         >
@@ -58,22 +62,39 @@ export const NodeInput = ({
     );
   }
 
-  // Handle various text inputs
+  // Detect field types based on type and name
   const isPassword = type === "password";
-  const isEmail = type === "email" || attributes.name === "identifier" || attributes.name?.includes("email");
+  const isEmail = type === "email" || name === "identifier" || name?.includes("email");
+  const isCode = name === "code" || name?.includes("code") || name?.includes("totp");
 
-  // Determine textContentType and autoComplete based on field type
-  const getTextContentType = (): "emailAddress" | "password" | "username" | "none" => {
+  // Detect if this is a new password field (registration/settings) vs login password
+  // Registration group or password_register name indicates new password
+  const isNewPassword = isPassword && (
+    node.group === "password" && name?.includes("password") && !name?.includes("current")
+  );
+
+  /**
+   * Get iOS textContentType for password autofill support
+   * See: https://developer.apple.com/documentation/uikit/uitextcontenttype
+   */
+  const getTextContentType = (): TextContentType => {
+    if (isCode) return "oneTimeCode";
     if (isEmail) return "emailAddress";
+    if (isNewPassword) return "newPassword";
     if (isPassword) return "password";
-    if (attributes.name === "identifier") return "username";
+    if (name === "identifier") return "username";
     return "none";
   };
 
-  const getAutoComplete = (): "email" | "password" | "username" | "off" => {
+  /**
+   * Get autoComplete value for cross-platform autofill
+   */
+  const getAutoComplete = (): AutoCompleteType => {
+    if (isCode) return "one-time-code";
     if (isEmail) return "email";
+    if (isNewPassword) return "password-new";
     if (isPassword) return "password";
-    if (attributes.name === "identifier") return "username";
+    if (name === "identifier") return "username";
     return "off";
   };
 
@@ -84,7 +105,7 @@ export const NodeInput = ({
   return (
     <View className="mb-4">
       <Text className="mb-1.5 font-medium text-sm text-ui-700">
-        {node.meta.label?.text || attributes.name}
+        {node.meta.label?.text || name}
       </Text>
       <TextInput
         className={`w-full rounded-forms border px-4 py-[13px] text-base bg-white text-ui-900 ${
@@ -98,16 +119,16 @@ export const NodeInput = ({
         autoCorrect={false}
         autoComplete={getAutoComplete()}
         textContentType={getTextContentType()}
-        placeholder={node.meta.label?.text || attributes.name}
+        placeholder={node.meta.label?.text || name}
         placeholderTextColor="#64748b"
-        keyboardType={isEmail ? "email-address" : "default"}
+        keyboardType={isEmail ? "email-address" : isCode ? "number-pad" : "default"}
         returnKeyType="done"
         onSubmitEditing={onEnterSubmit}
         blurOnSubmit={false}
       />
       {node.messages?.map((msg, index) => (
         <Text
-          key={index}
+          key={msg.id ?? index}
           className={`mt-1.5 text-sm ${
             msg.type === "error" ? "text-ui-danger" : "text-ui-500"
           }`}

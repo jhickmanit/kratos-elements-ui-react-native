@@ -10,11 +10,7 @@ export async function extractFlowFromError(error: unknown): Promise<any | null> 
   if (error instanceof ResponseError) {
     try {
       const body = await error.response.json();
-      // Check if it's a flow response (has ui property)
-      if (body && body.ui) {
-        return body;
-      }
-      return body;
+      return body ?? null;
     } catch {
       // Failed to parse JSON
       return null;
