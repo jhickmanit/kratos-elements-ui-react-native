@@ -1,0 +1,124 @@
+version: v1.0.0
+
+dsn: memory
+
+serve:
+  public:
+    # Use 0.0.0.0 to listen on all interfaces (localhost + IP)
+    host: 0.0.0.0
+    base_url: http://localhost:4433/
+    cors:
+      enabled: true
+      allowed_origins:
+        - http://localhost:8081
+        - http://127.0.0.1:8081
+        - http://localhost:3000
+        - http://127.0.0.1:3000
+        # Add your local network IP for mobile device testing
+        - http://192.168.50.61:8081
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers:
+        - Authorization
+        - Cookie
+        - Content-Type
+        - X-Session-Token
+      exposed_headers:
+        - Content-Type
+        - Set-Cookie
+      allow_credentials: true
+  admin:
+    base_url: http://localhost:4434/
+
+selfservice:
+  default_browser_return_url: http://localhost:8081/
+  allowed_return_urls:
+    - http://localhost:8081
+    - http://127.0.0.1:8081
+    - http://192.168.50.61:8081
+
+  methods:
+    password:
+      enabled: true
+    totp:
+      enabled: true
+      config:
+        issuer: KratosDemo
+    lookup_secret:
+      enabled: true
+    link:
+      enabled: true
+    code:
+      enabled: true
+
+  flows:
+    error:
+      ui_url: http://localhost:8081/error
+
+    settings:
+      ui_url: http://localhost:8081/(auth)/settings
+      privileged_session_max_age: 15m
+      required_aal: highest_available
+
+    recovery:
+      enabled: true
+      ui_url: http://localhost:8081/(auth)/recovery
+      use: code
+
+    verification:
+      enabled: true
+      ui_url: http://localhost:8081/(auth)/verification
+      use: code
+      after:
+        default_browser_return_url: http://localhost:8081/
+
+    logout:
+      after:
+        default_browser_return_url: http://localhost:8081/
+
+    login:
+      ui_url: http://localhost:8081/(auth)/login
+      lifespan: 10m
+
+    registration:
+      enabled: true
+      ui_url: http://localhost:8081/(auth)/registration
+      lifespan: 10m
+      after:
+        password:
+          hooks:
+            - hook: session
+            - hook: show_verification_ui
+
+log:
+  level: debug
+  format: text
+  leak_sensitive_values: true
+
+secrets:
+  cookie:
+    - PLEASE-CHANGE-ME-I-AM-VERY-INSECURE
+  cipher:
+    - 32-LONG-SECRET-NOT-SECURE-AT-ALL
+
+ciphers:
+  algorithm: xchacha20-poly1305
+
+hashers:
+  algorithm: bcrypt
+  bcrypt:
+    cost: 8
+
+identity:
+  default_schema_id: default
+  schemas:
+    - id: default
+      url: file:///etc/config/kratos/identity.schema.json
+
+courier:
+  smtp:
+    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
