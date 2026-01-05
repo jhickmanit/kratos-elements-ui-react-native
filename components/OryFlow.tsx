@@ -10,6 +10,7 @@ import {
   SettingsFlow,
 } from "@ory/client-fetch";
 import { NodeDispatcher } from "./NodeDispatcher";
+import { NodePasskey } from "./NodePasskey";
 import { unflattenObject } from "../api/utils";
 
 /** Generate a stable key for a UI node */
@@ -136,6 +137,50 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
     }
   }, [defaultSubmit, isLoading, handleNodeSubmit]);
 
+  // Handle passkey submission - passkey component provides its own values
+  const handlePasskeySubmit = React.useCallback(
+    (passkeyValues: Record<string, string>) => {
+      // Get hidden field values from flow (csrf_token, etc.)
+      const hiddenValues: Record<string, unknown> = {};
+      if (flow?.ui?.nodes) {
+        flow.ui.nodes.forEach((node) => {
+          if (node.type === "input") {
+            const attrs = node.attributes as UiNodeInputAttributes;
+            if (attrs.type === "hidden" && attrs.value !== undefined) {
+              hiddenValues[attrs.name] = attrs.value;
+            }
+          }
+        });
+      }
+
+      // Merge hidden values, user-entered values (for identifier), and passkey values
+      const flatPayload = { ...hiddenValues, ...values, ...passkeyValues };
+      const payload = unflattenObject(flatPayload);
+      onSubmit(payload);
+    },
+    [flow, values, onSubmit]
+  );
+
+  // Separate passkey nodes from other nodes
+  const { passkeyNodes, otherNodes } = React.useMemo(() => {
+    if (!flow?.ui?.nodes) {
+      return { passkeyNodes: [], otherNodes: [] };
+    }
+
+    const passkey: UiNode[] = [];
+    const other: UiNode[] = [];
+
+    for (const node of flow.ui.nodes) {
+      if (node.group === "passkey") {
+        passkey.push(node);
+      } else {
+        other.push(node);
+      }
+    }
+
+    return { passkeyNodes: passkey, otherNodes: other };
+  }, [flow?.ui?.nodes]);
+
   if (!flow) {
     return (
       <View className="flex-1 items-center justify-center py-8">
@@ -165,7 +210,8 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
         </View>
       ))}
 
-      {flow.ui.nodes.map((node, index) => {
+      {/* Render non-passkey nodes */}
+      {otherNodes.map((node, index) => {
         const name =
           node.type === "input"
             ? (node.attributes as UiNodeInputAttributes).name
@@ -182,6 +228,15 @@ export const OryFlow = ({ flow, onSubmit, isLoading }: OryFlowProps) => {
           />
         );
       })}
+
+      {/* Render passkey nodes as a group */}
+      {passkeyNodes.length > 0 && (
+        <NodePasskey
+          nodes={passkeyNodes}
+          onSubmit={handlePasskeySubmit}
+          disabled={isLoading || false}
+        />
+      )}
     </View>
   );
 };
