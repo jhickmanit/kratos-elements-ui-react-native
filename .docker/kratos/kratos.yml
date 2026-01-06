@@ -10,7 +10,7 @@ serve:
     cors:
       enabled: true
       allowed_origins:
-        - http://localhost:8081
+        - https://2579da2decc1.ngrok.app
         - http://127.0.0.1:8081
         - http://localhost:3000
         - http://127.0.0.1:3000
@@ -37,7 +37,7 @@ serve:
 selfservice:
   default_browser_return_url: http://localhost:8081/
   allowed_return_urls:
-    - http://localhost:8081
+    - https://2579da2decc1.ngrok.app
     - http://127.0.0.1:8081
     - http://192.168.50.61:8081
 
@@ -51,10 +51,10 @@ selfservice:
           display_name: Kratos Demo
           # For local development, use localhost
           # For production, use your domain
-          id: localhost
+          id: 2579da2decc1.ngrok.app
           origins:
-            - http://localhost:8081
-            - http://localhost:4433
+            - https://2579da2decc1.ngrok.app
+            - https://2579da2decc1.ngrok.app
             - http://127.0.0.1:8081
     totp:
       enabled: true

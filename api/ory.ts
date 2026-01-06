@@ -28,6 +28,10 @@ export const oryUrl = isWeb
   ? configuredUrl.replace(/192\.168\.\d+\.\d+/, "localhost")
   : configuredUrl;
 
+if (__DEV__) {
+  console.log(`Ory URL: ${oryUrl} (platform: ${isWeb ? "web" : "native"})`);
+}
+
 /**
  * Create an Ory FrontendApi client with platform-appropriate configuration.
  *
