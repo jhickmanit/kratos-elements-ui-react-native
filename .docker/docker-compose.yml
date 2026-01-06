@@ -23,7 +23,7 @@ services:
       - kratos-migrate
     image: oryd/kratos:v1.3.1
     ports:
-      - "4433:4433" # public
+      - "4433:4433" # public (direct access for local dev)
       - "4434:4434" # admin
     restart: unless-stopped
     environment:
@@ -38,6 +38,19 @@ services:
       - type: bind
         source: ./kratos
         target: /etc/config/kratos
+    networks:
+      - intranet
+
+  # Nginx proxy for passkey testing (serves assetlinks.json + proxies to Kratos)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "4480:80" # Use this port with ngrok for passkey testing
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./assetlinks.json:/etc/nginx/assetlinks.json:ro
+    depends_on:
+      - kratos
     networks:
       - intranet
 

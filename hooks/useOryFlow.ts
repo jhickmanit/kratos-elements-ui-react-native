@@ -127,10 +127,26 @@ export function useOryFlow<T extends AnyFlow>(
   useEffect(() => {
     if (skip) return;
 
+    if (__DEV__) {
+      console.log(`Creating ${flowType} flow (platform: ${isWeb ? 'web' : 'native'})`);
+    }
+
     createFlow<T>(flowType, client)
       .then(setFlow)
-      .catch((err) => {
+      .catch(async (err) => {
         console.error(`Failed to create ${flowType} flow:`, err);
+
+        // Log detailed error info for debugging
+        if (err instanceof Error && "response" in err) {
+          const response = (err as any).response;
+          console.error(`Response status: ${response?.status}`);
+          try {
+            const body = await response?.clone?.()?.json?.();
+            console.error(`Response body:`, JSON.stringify(body, null, 2));
+          } catch {
+            console.error(`Could not parse response body`);
+          }
+        }
 
         if (isAuthError(err) && onAuthError) {
           onAuthError();

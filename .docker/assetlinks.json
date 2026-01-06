@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ory.kratos.elements.demo",
+      "sha256_cert_fingerprints": [
+        "64:66:21:6D:E4:08:BF:2E:87:33:BA:0F:2C:A7:89:58:28:63:1F:4B:92:E4:D1:63:CF:2A:86:5A:3A:C5:EF:0A"
+      ]
+    }
+  }
+]
